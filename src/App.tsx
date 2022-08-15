@@ -11,31 +11,29 @@ const calculateFunctions = [
 
 type OnChangeEvent = React.FormEvent<HTMLInputElement>;
 
-const calculate = (values: number[], calculateIndices: number[]) => values
-  .slice(1, values.length)
-  .reduce(
-    (accu, v, i) => calculateFunctions[calculateIndices[i]].func(accu, v),
-    values[0],
-);
+const calculate = (values: number[], calculateIndices: number[]) => {
+  let index = 0;
+  const [revisedFuncs, revisedValues] = calculateIndices
+    .reduce(([funcs, vs], calculateIndex) => {
+      if (calculateIndex > 1) {
+        const [a, b] = vs.slice(index, index + 2);
+        const calcFunc = calculateFunctions[calculateIndex].func;
+        const result = calcFunc(a, b);
+        return [
+          [...funcs.slice(0, index), ...funcs.slice(index + 1)],
+          [...vs.slice(0, index), result, ...vs.slice(index + 2)]];
+      }
+      index += 1;
+      return [funcs, vs];
+    }, [calculateIndices, values]);
 
-// const calculate = (values: number[], calculateIndices: number[]) => {
-//   let process = [...values];
-//   calculateIndices.forEach((calcIndex, index) => {
-//     if (calcIndex > 1) {
-//       const calcFunc = calculateFunctions[calcIndex].func;
-//       const result = calcFunc(process[index], process[index + 1]);
-//       process = process
-//         .slice(0, index)
-//         .concat(result)
-//         .concat(process.slice(index + 1));
-//     }
-//   });
-//   return process.slice(1, values.length)
-//     .reduce(
-//       (accu, v, i) => calculateFunctions[calculateIndices[i]].func(accu, v),
-//       values[0],
-// );
-// };
+  return revisedValues
+    .slice(1, revisedValues.length)
+    .reduce(
+      (accu, v, i) => calculateFunctions[revisedFuncs[i]].func(accu, v),
+      revisedValues[0],
+  );
+};
 
 const indexToCalulateInfo = (index: number) => Array
   .from(
@@ -45,42 +43,102 @@ const indexToCalulateInfo = (index: number) => Array
   )
   .map((v) => Number(v));
 
-// hacked
-const getPossibles = () => {
-  const source = [0, 1, 2, 3];
-  const possibles: number[][] = [];
-  for (let i = 0; i < 4; i += 1) {
-    for (let i2 = 0; i2 < 3; i2 += 1) {
-      for (let i3 = 0; i3 < 2; i3 += 1) {
-        const possible: number[] = [];
-        [i, i2, i3, 0].reduce((prev, index) => {
-          const [a] = prev.splice(index, 1);
-          possible.push(a);
-          return [...prev];
-        }, [...source]);
-        possibles.push(possible);
-      }
-    }
-  }
-  return possibles;
+const getPossibles = (number = 4) => {
+  const source = new Array(number).fill(0).map((_, i) => i);
+  const init = source.map((s) => ({
+    values: [s],
+    rest: source.slice(0, s).concat(source.slice(s + 1)),
+  }));
+  const possibles = source.slice(1).reduce(
+    (candidates) => {
+      const nextCandidates: Array<{ values: number[]; rest: number[] }> = [];
+      candidates.forEach(({ values, rest }) => {
+        rest.forEach((r, i) => {
+          nextCandidates.push({
+            values: values.concat(r),
+            rest: [...rest.slice(0, i), ...rest.slice(i + 1)],
+          });
+        });
+      });
+      return nextCandidates;
+    },
+    init,
+  );
+  return possibles.map(({ values }) => values);
 };
 
-const validate = (values: number[]) => {
-  const possibles = getPossibles();
+const getBracketsCombinations = (number = 4) => {
+  const source = new Array(number).fill(0).map((_, i) => i);
+  const result: number[][][] = [];
+  source.slice(0, source.length - 1).forEach((s, i) => {
+    source.slice(i + 1).forEach((end, i2) => {
+      result.push([[s, end]]);
+      const rest = source.slice(i + i2 + 2);
+      if (rest.length > 1) {
+        const localResult = getBracketsCombinations(rest.length);
+        result.push(
+          ...localResult.map((r) => [
+            [s, end],
+            ...r.map((d) => d.map((v) => i + i2 + 2 + v)),
+          ]),
+        );
+      }
+    });
+  });
+  return result;
+};
+
+const validate = (values: number[]):
+  [number[], number[], number[][] | undefined] | false => {
+  const possibles = getPossibles(values.length);
+  const bracketsCombinations = getBracketsCombinations(values.length);
+
   for (let combo = 0; combo < possibles.length - 1; combo += 1) {
     const reordered = possibles[combo].map((i) => values[i]);
-    for (let pivot = 0; pivot < values.length - 1; pivot += 1) {
-      for (
-        let i = 0;
-        i < calculateFunctions.length ** (reordered.length - 1);
-        i += 1
-      ) {
-        const calculateIndices = indexToCalulateInfo(i);
-        const orderTransformed = reordered
-          .slice(pivot)
-          .concat(reordered.slice(0, pivot));
-        const result = calculate(orderTransformed, calculateIndices);
-        if (result === 24) return [calculateIndices, orderTransformed];
+    for (
+      let i = 0;
+      i < calculateFunctions.length ** (reordered.length - 1);
+      i += 1
+    ) {
+      // without brackets
+      const calculateIndices = indexToCalulateInfo(i);
+      const result = calculate(reordered, calculateIndices);
+      if (result === 24) return [calculateIndices, reordered, undefined];
+      // with brackets
+      for (let index = 0; index < bracketsCombinations.length - 1; index += 1) {
+        const brackets = bracketsCombinations[index];
+        let bracketValues: number[] = reordered.slice(0, brackets[0][0]);
+        let bracketFuncs: number[] = calculateIndices.slice(0, brackets[0][0]);
+        brackets.forEach((b, bi) => {
+          const localResult = calculate(
+            reordered.slice(b[0], b[1] + 1),
+            calculateIndices.slice(...b),
+          );
+          const next = brackets[bi + 1];
+          if (next) {
+            bracketValues = [
+              ...bracketValues,
+              localResult,
+              ...reordered.slice(b[1] + 1, next[0]),
+            ];
+            bracketFuncs = [
+              ...bracketFuncs,
+              ...calculateIndices.slice(b[1], next[0]),
+            ];
+          } else {
+            bracketValues = [
+              ...bracketValues,
+              localResult,
+              ...reordered.slice(b[1] + 1),
+            ];
+            bracketFuncs = [
+              ...bracketFuncs,
+              ...calculateIndices.slice(b[1]),
+            ];
+          }
+        });
+        const result2 = calculate(bracketValues, bracketFuncs);
+        if (result2 === 24) return [calculateIndices, reordered, brackets];
       }
     }
   }
@@ -89,20 +147,27 @@ const validate = (values: number[]) => {
 };
 
 const composeProcessString = (
-  values: number[],
   calculateIndices: number[],
-) => values
-    .slice(1, values.length)
+  values: number[],
+  brackets?: number[][],
+) => {
+  const finalString = values.map((v) => String(v));
+  if (brackets) {
+    brackets.forEach(([start, end]) => {
+        finalString[start] = `(${finalString[start]}`;
+        finalString[end] = `${finalString[end]})`;
+      });
+    }
+  return finalString
+    .slice(1, finalString.length)
     .reduce(
       (prev, v, i) => {
         const functionName = calculateFunctions[calculateIndices[i]].name;
-        if (calculateIndices[i] > 1 && calculateIndices[i - 1] < 2) {
-          return `(${prev})${functionName}${v}`;
-        }
         return `${prev}${functionName}${v}`;
       },
-      String(values[0]),
+      String(finalString[0]),
     );
+};
 
 const App = () => {
   const [input, setInput] = React.useState<string>('');
@@ -112,7 +177,7 @@ const App = () => {
     const values = Array.from(value).map((v) => Number(v));
     const result = validate(values);
     if (result) {
-      setOutput(`true, 因為 ${composeProcessString(result[1], result[0])} = 24`);
+      setOutput(`true, 因為 ${composeProcessString(...result)} = 24`);
     } else {
       setOutput('false');
     }
