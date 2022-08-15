@@ -44,7 +44,6 @@
       "warn",
       "after",
       { "overrides": { "?": "before", ":": "before" } }
-    ],
-    "max-len": ["error", { "comments": 100 }]
+    ]
   }
 }

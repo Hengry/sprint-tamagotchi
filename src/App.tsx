@@ -1,11 +1,10 @@
 import React from 'react';
-import './App.css';
 
 const calculateFunctions = [
-  { name: ' + ', func: (a: number, b: number) => a + b },
-  { name: ' - ', func: (a: number, b: number) => a - b },
-  { name: ' * ', func: (a: number, b: number) => a * b },
-  { name: ' / ', func: (a: number, b: number) => a / b },
+  { name: '+', func: (a: number, b: number) => a + b },
+  { name: '-', func: (a: number, b: number) => a - b },
+  { name: '*', func: (a: number, b: number) => a * b },
+  { name: '/', func: (a: number, b: number) => a / b },
   { name: '^', func: (a: number, b: number) => a ** b },
 ];
 
@@ -183,26 +182,55 @@ const App = () => {
     }
   }, []);
 
+  const inputRef = React.useRef<HTMLInputElement>(null);
   const handleChange = React.useCallback((e: OnChangeEvent) => {
-      setInput(e.currentTarget.value);
-    }, []);
+    const v = e.currentTarget.value;
+    setInput(v);
+    if (v.length === 4) {
+      inputRef.current?.blur();
+      handleSubmit(v);
+    }
+  }, [handleSubmit]);
+
+  const handleClick = React.useCallback(() => {
+    setInput('');
+  }, []);
+
+  const autoFocus = React.useCallback((e: KeyboardEvent) => {
+    if (!Number.isNaN(+e.key) && inputRef.current !== document.activeElement) {
+      setInput('');
+      inputRef.current?.focus();
+    }
+  }, []);
+
+  React.useEffect(() => {
+    document.addEventListener('keydown', autoFocus, false);
+    return () => {
+      document.removeEventListener('keydown', autoFocus, false);
+    };
+  }, [autoFocus]);
 
   return (
     <div className='App'>
-      <body>
-        <div className='text-3xl'>
-          <input
-            className='outline'
-            type='number'
-            value={input}
-            onChange={handleChange}
-          />
-          <button type='button' onClick={() => handleSubmit(input)}>
-            verify
-          </button>
-        </div>
-        <div className='text-3xl'>
-          {output}
+      <body className='flex flex-col justify-center items-center'>
+        <div className='relative w-full flex flex-col justify-center items-center'>
+          <div className='absolute bottom-full'>
+            請輸入數字以檢驗
+          </div>
+          <div>
+            <input
+              className='text-9xl w-80'
+              type='number'
+              value={input}
+              placeholder='0000'
+              onChange={handleChange}
+              onClick={handleClick}
+              ref={inputRef}
+            />
+          </div>
+          <div className='absolute top-full'>
+            {input.length === 4 ? output : null}
+          </div>
         </div>
       </body>
     </div>
