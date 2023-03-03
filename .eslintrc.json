@@ -44,6 +44,7 @@
       "warn",
       "after",
       { "overrides": { "?": "before", ":": "before" } }
-    ]
+    ],
+    "@typescript-eslint/comma-dangle": "off"
   }
 }
