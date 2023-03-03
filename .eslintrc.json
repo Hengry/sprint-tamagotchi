@@ -45,6 +45,8 @@
       "after",
       { "overrides": { "?": "before", ":": "before" } }
     ],
-    "@typescript-eslint/comma-dangle": "off"
+    "@typescript-eslint/comma-dangle": "off",
+    "implicit-arrow-linebreak": "off",
+    "arrow-parens": ["error", "as-needed"]
   }
 }
