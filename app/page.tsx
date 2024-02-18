@@ -14,6 +14,7 @@ import { tags, Tag } from './data';
 
 import Auth from './Auth';
 import { useCallback } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 
 const Title = tw.div`p-8`;
 
@@ -62,7 +63,12 @@ export default function Home() {
       serverTime: serverTimestamp(),
       user: auth.currentUser?.uid,
     };
-    const docRef = await addDoc(tagsCollection, newTag);
+
+    toast.promise(addDoc(tagsCollection, newTag), {
+      loading: 'Loading',
+      success: 'Succeeded',
+      error: 'Error',
+    });
   };
   return (
     <main>
@@ -72,6 +78,7 @@ export default function Home() {
           <TagButton key={tag.text} tag={tag} onClick={handleClick} />
         ))}
       </div>
+      <Toaster />
     </main>
   );
 }
