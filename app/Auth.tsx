@@ -33,7 +33,7 @@ function SignInScreen() {
   }, []);
 
   return (
-    <div className='flex items-center justify-end gap-2 p-2 min-h-14'>
+    <div className='flex items-center justify-end gap-2 p-2 min-h-[3.5rem]'>
       {isSignedIn ? (
         <>
           <span>{auth.currentUser?.displayName}</span>
