@@ -35,12 +35,18 @@ function TagButton<T extends string>({ onClick, tag }: TagButtonProps) {
   return (
     <button
       className={twJoin(
-        'rounded whitespace-pre-wrap p-2 touch-manipulation',
+        'rounded touch-manipulation relative',
         tag.color || 'bg-gray-800 '
       )}
       onClick={handleClick}
     >
-      {tag.text}
+      {tag.icon && (
+        <Icon
+          className='absolute h-full w-auto aspect-square -translate-x-1/2 left-1/2 text-gray-200/20'
+          icon={tag.icon}
+        />
+      )}
+      <div className='p-2 whitespace-pre-wrap relative z-10'>{tag.text}</div>
     </button>
   );
 }
