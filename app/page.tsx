@@ -2,50 +2,58 @@
 'use client';
 import Image from 'next/image';
 import tw from 'twin.macro';
-import { twJoin } from 'tailwind-merge';
-import { collection, addDoc } from 'firebase/firestore';
+import { twJoin, twMerge } from 'tailwind-merge';
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  FieldValue,
+} from 'firebase/firestore';
 import { Icon } from '@iconify/react';
 import { db } from './_vender/firebase';
-import tagNames from './tags.data';
+import { tags, Tag } from './data';
 
 import Auth from './Auth';
 import { useCallback } from 'react';
 
 const Title = tw.div`p-8`;
 
-interface Tag {
+interface Record extends Tag {
   deviceTime: number;
-  serverTime?: number;
-  value: string;
+  serverTime: FieldValue;
 }
 
-interface TagButtonProps<T> {
-  onClick: (v: T) => void;
-  value: T;
+interface TagButtonProps {
+  onClick: (v: Tag) => void;
+  tag: Tag;
 }
-function TagButton<T extends string>({ onClick, value }: TagButtonProps<T>) {
+function TagButton<T extends string>({ onClick, tag }: TagButtonProps) {
   const handleClick = useCallback(() => {
-    onClick(value);
-  }, [onClick, value]);
+    onClick(tag);
+  }, [onClick, tag]);
 
   return (
     <button
-      className='bg-gray-800 rounded whitespace-pre-wrap p-2'
+      className={twJoin(
+        'rounded whitespace-pre-wrap p-2 touch-manipulation',
+        tag.color || 'bg-gray-800 '
+      )}
       onClick={handleClick}
     >
-      {value}
+      {tag.text}
     </button>
   );
 }
 
 export default function Home() {
-  const handleClick = async (value: string) => {
+  const handleClick = async (tag: Tag) => {
     const collectionName =
       process.env.NODE_ENV === 'production' ? 'tags' : 'devTags';
     const tagsCollection = collection(db, collectionName);
-    const newTag: Tag = {
+    const newTag: Record = {
+      ...tag,
       deviceTime: Date.now(),
-      value,
+      serverTime: serverTimestamp(),
     };
     const docRef = await addDoc(tagsCollection, newTag);
   };
@@ -53,8 +61,8 @@ export default function Home() {
     <main>
       <Auth />
       <div className='grid grid-cols-3 gap-2 p-2'>
-        {tagNames.map((name) => (
-          <TagButton key={name} onClick={handleClick} value={name} />
+        {tags.map((tag) => (
+          <TagButton key={tag.text} tag={tag} onClick={handleClick} />
         ))}
       </div>
     </main>
