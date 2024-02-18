@@ -17,6 +17,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@headlessui/react": "^1.7.17",
+    "@iconify/react": "^4.1.1",
     "firebase": "^10.8.0",
     "lodash-es": "^4.17.21",
     "next": "13.5.4",
