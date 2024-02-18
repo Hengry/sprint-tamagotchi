@@ -9,7 +9,7 @@ import {
   FieldValue,
 } from 'firebase/firestore';
 import { Icon } from '@iconify/react';
-import { db } from './_vender/firebase';
+import { auth, db } from './_vender/firebase';
 import { tags, Tag } from './data';
 
 import Auth from './Auth';
@@ -20,6 +20,7 @@ const Title = tw.div`p-8`;
 interface Record extends Tag {
   deviceTime: number;
   serverTime: FieldValue;
+  user?: string;
 }
 
 interface TagButtonProps {
@@ -59,6 +60,7 @@ export default function Home() {
       ...tag,
       deviceTime: Date.now(),
       serverTime: serverTimestamp(),
+      user: auth.currentUser?.uid,
     };
     const docRef = await addDoc(tagsCollection, newTag);
   };
