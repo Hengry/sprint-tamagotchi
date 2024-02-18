@@ -66,7 +66,7 @@ export default function Home() {
 
     toast.promise(addDoc(tagsCollection, newTag), {
       loading: 'Loading',
-      success: 'Succeeded',
+      success: `Succeeded ${tag.text}`,
       error: 'Error',
     });
   };
