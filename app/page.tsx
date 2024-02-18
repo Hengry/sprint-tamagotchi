@@ -71,7 +71,7 @@ export default function Home() {
     });
   };
   return (
-    <main>
+    <main className='touch-manipulation'>
       <Auth />
       <div className='grid grid-cols-3 gap-2 p-2'>
         {tags.map((tag) => (
