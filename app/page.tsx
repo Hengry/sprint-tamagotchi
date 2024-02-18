@@ -41,7 +41,7 @@ function TagButton<T extends string>({ onClick, tag }: TagButtonProps) {
     >
       {tag.icon && (
         <Icon
-          className='absolute h-full w-auto aspect-square -translate-x-1/2 left-1/2 text-gray-200/20'
+          className='absolute h-full w-auto aspect-square right-0 text-white/10'
           icon={tag.icon}
         />
       )}
