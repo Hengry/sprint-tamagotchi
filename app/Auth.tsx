@@ -1,8 +1,10 @@
 // Import FirebaseAuth and firebase.
 import React, { useEffect, useState } from 'react';
-import StyledFirebaseAuth from './StyledFirebaseAuth';
 import firebase from 'firebase/compat/app';
+
+import StyledFirebaseAuth from './StyledFirebaseAuth';
 import { auth } from './_vender/firebase';
+import './firebaseui-styling.global.css';
 
 // Configure FirebaseUI.
 const uiConfig = {
@@ -30,20 +32,21 @@ function SignInScreen() {
     return () => unregisterAuthObserver(); // Make sure we un-register Firebase observers when the component unmounts.
   }, []);
 
-  if (!isSignedIn) {
-    return (
-      <div>
-        <h1>My App</h1>
-        <p>Please sign-in:</p>
-        <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={auth} />
-      </div>
-    );
-  }
   return (
-    <div>
-      <h1>My App</h1>
-      <p>Welcome {auth.currentUser?.displayName}! You are now signed-in!</p>
-      <a onClick={() => auth.signOut()}>Sign-out</a>
+    <div className='flex items-center justify-end gap-2 p-2 min-h-14'>
+      {isSignedIn ? (
+        <>
+          <span>{auth.currentUser?.displayName}</span>
+          <button
+            className='bg-gray-800 rounded p-2'
+            onClick={() => auth.signOut()}
+          >
+            Sign-out
+          </button>
+        </>
+      ) : (
+        <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={auth} />
+      )}
     </div>
   );
 }
