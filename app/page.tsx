@@ -1,6 +1,5 @@
 /** @jsxImportSource @emotion/react */
 'use client';
-import Image from 'next/image';
 import tw from 'twin.macro';
 import { twJoin, twMerge } from 'tailwind-merge';
 import {
@@ -46,7 +45,7 @@ function TagButton<T extends string>({ onClick, tag }: TagButtonProps) {
           icon={tag.icon}
         />
       )}
-      <div className='p-2 whitespace-pre-wrap relative z-10'>{tag.text}</div>
+      <div className='whitespace-pre-wrap p-2 relative z-10'>{tag.text}</div>
     </button>
   );
 }
