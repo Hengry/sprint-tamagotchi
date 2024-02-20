@@ -8,8 +8,10 @@ import {
   limit,
   query,
   orderBy,
+  where,
 } from 'firebase/firestore';
 import axios from 'axios';
+import { type NextRequest } from 'next/server';
 
 import { db } from '../../_vender/firebase';
 import { Snapshot, Stats } from '../types';
@@ -24,8 +26,16 @@ const statuses = [
   'done',
 ];
 
-const fetchLatestSnapshot = async (collectionRef: CollectionReference) => {
-  const q = query(collectionRef, orderBy('date', 'desc'), limit(1));
+const fetchLatestSnapshot = async (
+  collectionRef: CollectionReference,
+  fieldValue: string
+) => {
+  const q = query(
+    collectionRef,
+    orderBy('date', 'desc'),
+    limit(1),
+    where('fieldValue', '==', fieldValue)
+  );
   const data = await getDocs(q);
   let result = {};
   data.forEach((d) => {
@@ -38,11 +48,11 @@ const saveSnapshot = async (
   collectionRef: CollectionReference,
   data: Snapshot
 ) => {
-  await setDoc(doc(collectionRef), { ...data, date: Date.now() });
+  await setDoc(doc(collectionRef), data);
 };
 
 const saveStats = async (collectionRef: CollectionReference, data: Stats) => {
-  await setDoc(doc(collectionRef), { ...data, date: Date.now() });
+  await setDoc(doc(collectionRef), data);
 };
 
 const clickupAPI = async (url: string, options?: object) => {
@@ -58,7 +68,7 @@ const clickupAPI = async (url: string, options?: object) => {
     .then((res) => res.data);
 };
 
-const fetchRawData = async () => {
+const fetchRawData = async (value: string) => {
   const teams = await clickupAPI(`https://api.clickup.com/api/v2/team`);
   const team = teams.teams.find(({ name }: any) => name === 'Cardinal Blue');
 
@@ -90,7 +100,7 @@ const fetchRawData = async () => {
                 {
                   field_id: '6ea9b8e4-836d-49fd-ad22-490fea467744',
                   operator: '=',
-                  value: '8.34',
+                  value,
                 },
               ]),
             },
@@ -121,20 +131,37 @@ const getStats = (previousData: any, nextData: any) => {
   return { completeness: score / fullScore };
 };
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const fieldValue = searchParams.get('value');
+    if (!fieldValue)
+      return new Response('value is required', {
+        status: 400,
+      });
     // const body = await request.json();
     // const id = body.id;
 
     const snapshotsCollection = collection(db, 'snapshots');
     const statsCollection = collection(db, 'stats');
 
-    const nextData = await fetchRawData();
-    const previousData = await fetchLatestSnapshot(snapshotsCollection);
-    await saveSnapshot(snapshotsCollection, { tasks: nextData });
+    const nextData = await fetchRawData(fieldValue);
+    const previousData = await fetchLatestSnapshot(
+      snapshotsCollection,
+      fieldValue
+    );
+    await saveSnapshot(snapshotsCollection, {
+      fieldValue,
+      date: Date.now(),
+      tasks: nextData,
+    });
     const stats = getStats(previousData, nextData);
     // assigneeId
-    await saveStats(statsCollection, stats);
+    await saveStats(statsCollection, {
+      ...stats,
+      date: Date.now(),
+      fieldValue,
+    });
 
     // const config = useRuntimeConfig()
     // const SLACK_BOT_TOKEN = config.slackBotToken

@@ -1,10 +1,23 @@
-import { collection, getDocs, limit, query, orderBy } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  limit,
+  query,
+  orderBy,
+  where,
+} from 'firebase/firestore';
+import { type NextRequest } from 'next/server';
 
 import { db } from '../../_vender/firebase';
 
-const fetchLatestStats = async () => {
+const fetchLatestStats = async (fieldValue: string) => {
   const collectionRef = collection(db, 'stats');
-  const q = query(collectionRef, orderBy('date', 'desc'), limit(1));
+  const q = query(
+    collectionRef,
+    orderBy('date', 'desc'),
+    limit(1),
+    where('fieldValue', '==', fieldValue)
+  );
   const data = await getDocs(q);
   let result = {};
   data.forEach((d) => {
@@ -14,11 +27,17 @@ const fetchLatestStats = async () => {
 };
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { userId: string } }
 ) {
   try {
-    const data = await fetchLatestStats();
+    const searchParams = request.nextUrl.searchParams;
+    const fieldValue = searchParams.get('value');
+    if (!fieldValue)
+      return new Response('value is required', {
+        status: 400,
+      });
+    const data = await fetchLatestStats(fieldValue);
 
     // const config = useRuntimeConfig()
     // const SLACK_BOT_TOKEN = config.slackBotToken
