@@ -3,13 +3,13 @@ import { getFirestore } from 'firebase/firestore';
 import 'firebase/compat/auth';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyAD-W1wWSMvfe2ke-VJzovNFY3h4jjwwM0',
-  authDomain: 'taglyze.firebaseapp.com',
-  projectId: 'taglyze',
-  storageBucket: 'taglyze.appspot.com',
-  messagingSenderId: '860716123071',
-  appId: '1:860716123071:web:9c3530f74b5174a3cc970a',
-  measurementId: 'G-2KG8KWPH2L',
+  apiKey: 'AIzaSyAZcea_0-196wy75fNYKqOsSOPaZoZVDQM',
+  authDomain: 'tamagotchi-66e1c.firebaseapp.com',
+  projectId: 'tamagotchi-66e1c',
+  storageBucket: 'tamagotchi-66e1c.appspot.com',
+  messagingSenderId: '912013731576',
+  appId: '1:912013731576:web:0a76b46794c82c660e3d0d',
+  measurementId: 'G-1G9DYCELSB',
 };
 export const app = firebase.initializeApp(firebaseConfig);
 
