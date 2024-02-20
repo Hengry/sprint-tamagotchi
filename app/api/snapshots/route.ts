@@ -33,9 +33,9 @@ const getStats = (previousData, nextData) => {
   return {};
 };
 
-export default async function POST(request: Request) {
+export async function POST(request: Request) {
   try {
-    const { body } = await request.json();
+    const body = await request.json();
     const id = body.id;
 
     const snapshotsCollection = collection(db, 'snapshots');
@@ -51,15 +51,12 @@ export default async function POST(request: Request) {
     // const config = useRuntimeConfig()
     // const SLACK_BOT_TOKEN = config.slackBotToken
 
-    return {
-      ok: true,
-    };
+    console.log('update');
+    return Response.json({});
   } catch (error) {
     console.error(error);
-    return {
-      ok: false,
-      message: 'failed',
-      error,
-    };
+    return new Response(`error: ${error}`, {
+      status: 400,
+    });
   }
 }

@@ -8,27 +8,23 @@ const fetchLatestStats = async (userId: string) => {
   return data.data()?.stats.find(({ assignee }: any) => assignee === userId);
 };
 
-export default async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: { userId: string } }
+) {
   try {
-    const {
-      body: { userId },
-    } = await request.json();
+    const userId = params.userId;
 
     const data = await fetchLatestStats(userId);
 
     // const config = useRuntimeConfig()
     // const SLACK_BOT_TOKEN = config.slackBotToken
-
-    return {
-      ok: true,
-      data,
-    };
+    console.log('data', data);
+    return Response.json(data || {});
   } catch (error) {
     console.error(error);
-    return {
-      ok: false,
-      message: 'failed',
-      error,
-    };
+    return new Response(`error: ${error}`, {
+      status: 400,
+    });
   }
 }
