@@ -26,7 +26,7 @@ const statuses = [
   'done',
 ];
 
-const fetchLatestSnapshot = async (
+const fetchLatest = async (
   collectionRef: CollectionReference,
   fieldValue: string
 ) => {
@@ -118,17 +118,25 @@ const fetchRawData = async (value: string) => {
   return Object.fromEntries(entries);
 };
 
-const getStats = (previousData: any, nextData: any) => {
+const getStats = (
+  prev: { snapshots: any; stats: any },
+  next: { snapshots: any }
+) => {
   const score = statuses.reduce(
-    (sum, status, index) => sum + index * nextData[status],
+    (sum, status, index) => sum + index * next.snapshots[status],
     0
   );
-  const ticketCounts = (Object.values(nextData) as number[]).reduce(
+  const ticketCounts = (Object.values(next.snapshots) as number[]).reduce(
     (sum, count) => sum + count,
     0
   );
   const fullScore = (statuses.length - 1) * ticketCounts;
-  return { completeness: score / fullScore };
+  const completeness = score / fullScore;
+  return {
+    completeness,
+    progressLevel: Math.floor(completeness * 5),
+    velocity: completeness - prev.stats.completeness,
+  };
 };
 
 export async function POST(request: NextRequest) {
@@ -145,17 +153,21 @@ export async function POST(request: NextRequest) {
     const snapshotsCollection = collection(db, 'snapshots');
     const statsCollection = collection(db, 'stats');
 
-    const nextData = await fetchRawData(fieldValue);
-    const previousData = await fetchLatestSnapshot(
+    const nextSnapshots = await fetchRawData(fieldValue);
+    const previousSnapshots = await fetchLatest(
       snapshotsCollection,
       fieldValue
     );
+    const previousStats = await fetchLatest(statsCollection, fieldValue);
     await saveSnapshot(snapshotsCollection, {
       fieldValue,
       date: Date.now(),
-      tasks: nextData,
+      tasks: nextSnapshots,
     });
-    const stats = getStats(previousData, nextData);
+    const stats = getStats(
+      { snapshots: previousSnapshots, stats: previousStats },
+      { snapshots: nextSnapshots }
+    );
     // assigneeId
     await saveStats(statsCollection, {
       ...stats,
