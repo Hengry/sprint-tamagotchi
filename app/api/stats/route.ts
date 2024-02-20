@@ -1,11 +1,16 @@
-import { collection, doc, getDoc, getFirestore } from 'firebase/firestore';
+import { collection, getDocs, limit, query, orderBy } from 'firebase/firestore';
 
-import { db } from '../../../_vender/firebase';
+import { db } from '../../_vender/firebase';
 
-const fetchLatestStats = async (userId: string) => {
+const fetchLatestStats = async () => {
   const collectionRef = collection(db, 'stats');
-  const data = await getDoc(doc(collectionRef));
-  return data.data()?.stats.find(({ assignee }: any) => assignee === userId);
+  const q = query(collectionRef, orderBy('date', 'desc'), limit(1));
+  const data = await getDocs(q);
+  let result = {};
+  data.forEach((d) => {
+    result = d.data();
+  });
+  return result;
 };
 
 export async function GET(
@@ -13,9 +18,7 @@ export async function GET(
   { params }: { params: { userId: string } }
 ) {
   try {
-    const userId = params.userId;
-
-    const data = await fetchLatestStats(userId);
+    const data = await fetchLatestStats();
 
     // const config = useRuntimeConfig()
     // const SLACK_BOT_TOKEN = config.slackBotToken

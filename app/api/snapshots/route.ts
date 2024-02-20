@@ -3,7 +3,11 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
+  limit,
+  query,
+  orderBy,
 } from 'firebase/firestore';
 import axios from 'axios';
 
@@ -20,18 +24,25 @@ const statuses = [
   'done',
 ];
 
-const fetchLatestSnapshot = async (collectionRef: CollectionReference) =>
-  getDoc(doc(collectionRef));
+const fetchLatestSnapshot = async (collectionRef: CollectionReference) => {
+  const q = query(collectionRef, orderBy('date', 'desc'), limit(1));
+  const data = await getDocs(q);
+  let result = {};
+  data.forEach((d) => {
+    result = d.data();
+  });
+  return result;
+};
 
 const saveSnapshot = async (
   collectionRef: CollectionReference,
   data: Snapshot
 ) => {
-  await setDoc(doc(collectionRef), data);
+  await setDoc(doc(collectionRef), { ...data, date: Date.now() });
 };
 
 const saveStats = async (collectionRef: CollectionReference, data: Stats) => {
-  await setDoc(doc(collectionRef), data);
+  await setDoc(doc(collectionRef), { ...data, date: Date.now() });
 };
 
 const clickupAPI = async (url: string, options?: object) => {
