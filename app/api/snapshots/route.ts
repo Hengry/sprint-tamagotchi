@@ -14,7 +14,7 @@ import axios from 'axios';
 import { type NextRequest } from 'next/server';
 
 import { db } from '../../_vender/firebase';
-import { Snapshot, Stats } from '../types';
+import { SnapshotDoc, Tasks, Stats } from '../types';
 
 const statuses = [
   'prep and planning',
@@ -37,7 +37,7 @@ const fetchLatest = async (
     where('fieldValue', '==', fieldValue)
   );
   const data = await getDocs(q);
-  let result = {};
+  let result: any = {};
   data.forEach((d) => {
     result = d.data();
   });
@@ -46,7 +46,7 @@ const fetchLatest = async (
 
 const saveSnapshot = async (
   collectionRef: CollectionReference,
-  data: Snapshot
+  data: SnapshotDoc
 ) => {
   await setDoc(doc(collectionRef), data);
 };
@@ -111,31 +111,57 @@ const fetchRawData = async (value: string) => {
         isEnd = Boolean(res.last_page);
         page++;
       }
-      return [status, tasks.length];
+      return [status, tasks.map(({ id }) => id)];
     })
   );
   console.log(entries);
   return Object.fromEntries(entries);
 };
 
+const getIdStatusTable = (
+  tasks: Tasks,
+  statusIndexTable: Record<string, number>
+) => {
+  const table: Record<string, number> = {};
+  Object.entries(tasks).forEach(([status, ids]) =>
+    ids.forEach((id) => {
+      table[id] = statusIndexTable[status];
+    })
+  );
+  return table;
+};
+
 const getStats = (
-  prev: { snapshots: any; stats: any },
-  next: { snapshots: any }
+  prev: { snapshots: Tasks; stats: any },
+  next: { snapshots: Tasks }
 ) => {
   const score = statuses.reduce(
-    (sum, status, index) => sum + index * next.snapshots[status],
+    (sum, status, index) => sum + index * next.snapshots[status].length,
     0
   );
-  const ticketCounts = (Object.values(next.snapshots) as number[]).reduce(
-    (sum, count) => sum + count,
+  const ticketCounts = (Object.values(next.snapshots) as string[][]).reduce(
+    (sum, ids) => sum + ids.length,
     0
   );
   const fullScore = (statuses.length - 1) * ticketCounts;
   const completeness = score / fullScore;
+
+  const statusIndexTable = Object.fromEntries(
+    statuses.map((status, index) => [status, index])
+  );
+  const prevStatusTable = getIdStatusTable(prev.snapshots, statusIndexTable);
+  const nextStatusTable = getIdStatusTable(next.snapshots, statusIndexTable);
+
+  let steps = 0;
+  Object.entries(nextStatusTable).forEach(([id, status]) => {
+    steps += Math.max(status - (prevStatusTable[id] || 0), 0);
+  });
+
   return {
     completeness,
     progressLevel: Math.floor(completeness * 5),
     velocity: completeness - prev.stats.completeness,
+    steps,
   };
 };
 
@@ -154,7 +180,7 @@ export async function POST(request: NextRequest) {
     const statsCollection = collection(db, 'stats');
 
     const nextSnapshots = await fetchRawData(fieldValue);
-    const previousSnapshots = await fetchLatest(
+    const previousSnapshots: SnapshotDoc = await fetchLatest(
       snapshotsCollection,
       fieldValue
     );
@@ -165,7 +191,7 @@ export async function POST(request: NextRequest) {
       tasks: nextSnapshots,
     });
     const stats = getStats(
-      { snapshots: previousSnapshots, stats: previousStats },
+      { snapshots: previousSnapshots.tasks, stats: previousStats },
       { snapshots: nextSnapshots }
     );
     // assigneeId
