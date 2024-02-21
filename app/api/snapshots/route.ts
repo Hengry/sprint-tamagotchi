@@ -15,6 +15,7 @@ import { type NextRequest } from 'next/server';
 
 import { db } from '../../_vender/firebase';
 import { SnapshotDoc, Tasks, Stats } from '../types';
+import generateDesc from '../snapshots/generateDesc';
 
 const statuses = [
   'prep and planning',
@@ -197,9 +198,21 @@ export async function POST(request: NextRequest) {
       { snapshots: previousSnapshots.tasks, stats: previousStats },
       { snapshots: nextSnapshots }
     );
+
+    const statusLevel = [
+      'egg',
+      'cracking egg',
+      'hen in broken egg',
+      'hen',
+      'walking hen',
+      'goaled hen',
+    ];
+    const { desc } = await generateDesc(statusLevel[stats.progressLevel]);
+
     // assigneeId
     await saveStats(statsCollection, {
       ...stats,
+      desc,
       date: Date.now(),
       fieldValue,
     });
