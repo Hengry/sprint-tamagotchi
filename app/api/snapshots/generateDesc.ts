@@ -11,7 +11,8 @@ const generateDesc = async (currentStatus: string) => {
       },
       {
         role: 'user',
-        content: 'please describe your self.',
+        content:
+          'Describe your self by calling the function "describeYourself".',
       },
     ],
     model: 'gpt-4',
