@@ -154,7 +154,10 @@ const getStats = (
 
   let steps = 0;
   Object.entries(nextStatusTable).forEach(([id, status]) => {
-    steps += Math.max(status - (prevStatusTable[id] || 0), 0);
+    steps += Math.max(
+      prevStatusTable[id] ? status - prevStatusTable[id] : 0,
+      0
+    );
   });
 
   return {
